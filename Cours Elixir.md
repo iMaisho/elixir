@@ -1,3 +1,5 @@
+https://hexdocs.pm/elixir/1.18.3/Kernel.html
+
 # Programmation Fonctionnelle
 
 - Pas de classe
@@ -635,12 +637,63 @@ def addToTail(num, acc \\ 0)
 # Base Case
 def addToTail(0, acc), do: acc
 # Tail Recursive
-def addToTail(num, acc) do
-  addToTail(num - 1, acc + num)
+def addToTail(num, acc) do: addToTail(num - 1, acc + num)
+```
+
+La version `Tail Recursive` est moins coûteuse en mémoire, et réutilise la même stack à chaque nouvelle itération. Il faut donc la privilégier.
+
+![image](https://github.com/iMaisho/elixir/blob/main/assets/head_tail_recursion.png?raw=true)
+
+#### Exemple supplémentaire
+
+Un autre exemple qui permet d'inverser le nombre fourni en entrée, en Tail Recursion
+
+```elixir
+# reverse(12345) -> 54321
+defmodule Tutorials.Recursion.ReverseDigits do
+  def reverse(num, acc \\ 0)
+  def reverse(0, acc), do: acc
+  def reverse(num, acc) do
+    new_num = div(num, 10)
+    new_acc = acc * 10 + rem(num, 10)
+    reverse(new_num, new_acc)
+  end
 end
 ```
 
-La version `Tail Recursive` est moins coûteuse en mémoire. Il faut donc la privilégier.
+#### Documenter un module
+
+On documente notre module juste en dessous de sa définition, grâce à différents mots clés :
+
+##### @moduledoc
+
+Ici, on vient faire un sommaire de nos différentes fonctions contenues dans ce module.
+
+```elixir
+defmodule Tutorials.Lists do
+  @moduledoc """
+  Sommaire des fonctions :
+
+  1. sum
+  """
+```
+
+##### @doc
+
+Ensuite, on vient décrire nos fonctions, en utilisant `@doc` au dessus de chacune d'elle
+
+```elixir
+  @doc """
+  Retourne la somme d'une liste de nombres.
+  """
+```
+
+##### @spec
+Enfin, on vient préciser les types de données que traite et renvoie notre fonction grâce à `@spec`
+
+```elixir
+@spec sum(list(number())) :: number()
+```
 ### for
 
 ### with
