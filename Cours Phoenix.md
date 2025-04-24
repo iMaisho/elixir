@@ -8,6 +8,7 @@ La live message permet de créer un nouveau message et de le lier à une convers
 - Créer mes tables
 - Scaffholding
 - Modifier les fichiers pour écrire leurs relations et permettre l'insertion de données dans les tables
+- Adapter le form Message pour le lier à une conversation (Preload)
 
 Checker `~P` : En lien avec les routes
 
