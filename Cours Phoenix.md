@@ -1,17 +1,5 @@
 # Structure d'un projet
 
-Messages et Conversation
-
-La live conversation affiche une liste de message
-La live message permet de créer un nouveau message et de le lier à une conversation afficher les conversations attachées pour les messages
-
-- Créer mes tables
-- Scaffholding
-- Modifier les fichiers pour écrire leurs relations et permettre l'insertion de données dans les tables
-- Adapter le form Message pour le lier à une conversation (Preload)
-
-Checker `~P` : En lien avec les routes
-
 # LiveView
 
 L'appel à une LiveView commence par une simple requête HTTP afin de récupérer tout le contenu statique de la page. Cela garantit un affichage rapide, même sans JS.
