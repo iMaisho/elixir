@@ -1,14 +1,40 @@
 import Config
 
+env_db_user =
+  System.get_env("POSTGRES_USR") ||
+    raise """
+    environment variable POSTGRES_USR is missing.
+    """
+
+env_db_passwd =
+  System.get_env("POSTGRES_PASSWD") ||
+    raise """
+    environment variable POSTGRES_PASSWD is missing.
+    """
+
+env_db_hostname =
+  System.get_env("POSTGRES_HOSTNAME") ||
+    raise """
+    environment variable POSTGRES_HOSTNAME is missing.
+    Example: localhost
+    """
+
+env_db_dbname =
+  System.get_env("POSTGRES_DBNAME") ||
+    raise """
+    environment variable POSTGRES_DBNAME is missing.
+    Example: my_app_website_dev
+    """
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
 config :testing, Testing.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
+  username: env_db_user,
+  password: env_db_passwd,
+  hostname: env_db_hostnamev,
   database: "testing_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2
