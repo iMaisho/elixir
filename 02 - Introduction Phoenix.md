@@ -138,3 +138,27 @@ end
 ```
 
 ## Opérations asynchrones
+
+
+## Utilité de `cast` et `validate_required` (Ecto Changeset)
+
+Dans les
+
+### `cast/3`
+- Sert à **sélectionner uniquement** les champs autorisés dans les données entrantes.
+- Protège contre les champs non attendus.
+- Remplit la struct avec les bonnes données.
+
+### `validate_required/2`
+- Vérifie que certains champs sont **présents** et **non vides** (`nil` ou vide pour string).
+- Permet de **valider** qu'une entité a toutes les infos essentielles.
+
+### Exemple dans un Message
+```elixir
+def changeset(message, attrs) do
+  message
+  |> cast(attrs, [:body, :conversation_id])
+  |> validate_required([:body, :conversation_id])
+end
+```
+
