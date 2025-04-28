@@ -180,6 +180,7 @@ Cette convention est importante car elle est utilisée notamment par des fonctio
   ➔ Corriger les alertes importantes avant de merger ou livrer.
 
 - **mix test**
+  ➔ Doc : https://hexdocs.pm/mix/Mix.Tasks.Test.html
   ➔ **À exécuter systématiquement avant chaque commit**.
   ➔ Vérifie que **l’ensemble du projet reste fonctionnel** après chaque modification.
   ➔ Aucun commit ne doit être fait si des tests échouent.
@@ -190,3 +191,118 @@ mix format
 mix credo --strict
 mix test
 ```
+
+## Workflow Frixel
+
+Lorsque vous souhaitez réaliser une nouvelle fonctionnalité (ou une nouvelle tâche) sur un projet, vous devez respecter les étapes suivantes :
+
+### **I - Créer le ticket JIRA associé**
+
+[**JIRA**](https://cristal-flow.atlassian.net/jira) est un outil de gestion de projet et de suivi de bugs. Beaucoup utilisé en agile, JIRA permet de faciliter la planification de tâches. Nous l’utilisons afin de permettre un suivi constant et maitrisé des différentes tâches (tech ou non tech) à réaliser sur un projet spécifique.
+
+Le tableau de bord d’un projet JIRA contient des tickets présents dans des colonnes différentes, qui spécifient le niveau d’avancement des tâches. Un ticket JIRA doit correspondre soit à une tâche (nouvelle fonctionnalité, tâche terchnique, une refactorisatonn de code, ect) ou à un bug/incident à corriger.
+
+### **II - Créé la branche GIT pour commencer le développement de la feature**
+
+On créé une nouvelle branche toujours à partir de la branche principale (en général nommée `master` ou `main`) afin de s’assurer d’embarquement les derniers changements récemment publiés sur la dernière version du projet. Voici la commande pour créer une nouvelle branche :
+
+`git checkout -b nom-de-la-feature-à-implémenter`
+
+Une fois la branche créée, vous pouvez commencer votre implémentation.
+
+⚠️ **Important à savoir** : Voici les 10 commandements de la bonne gestion d’une branche lors de l’implémentation d’une nouvelle fonctionnalité ou tout autre tâche technique :
+
+- Le nom de ta branche doit idéalement porter le même nom que le ticket JIRA associé
+- Le nom de ma branche doit contenir le numéro de référence du ticket JIRA associé à la tâche concernée
+- Le nom de mes commits doit contenir un mot clé qui définit la nature des changements apportés par la tâche que je souhaite effectué (respect de la [**nomenclature des commits**](https://www.notion.so/JF-TP-2-bonnes-pratiques-git-et-mise-en-place-d-une-CI-1764d1e5f33e80a7b3b6ec01c742bc61?pvs=21) mise en place par mon équipe)
+- Jamais et au grand jamais je vais m’amuser à créer ma branche depuis une branche qui n’est pas considéré comme branche principale
+- Je dois régulièrement pousser du code sur ma branche afin de faire des sauvegardes régulières de mon niveau d’avancement
+
+- Ma branche doit toujours être à jour avec tous les changements qui arrivent sur la branche principale (en utilisant la commande [`git rebase`](https://www.notion.so/JF-TP-2-bonnes-pratiques-git-et-mise-en-place-d-une-CI-1764d1e5f33e80a7b3b6ec01c742bc61?pvs=21))
+- Ma branche ne doit jamais avoir une durée de vie supérieur à 48h
+- Ma branche doit être liée à une seule tâche
+- Ma branche doit être liée à un seul ticket JIRA
+- À bas les branches “’*j’y mets tout ce qui me passe par la tête*”
+
+### **III - Implémentation de la feature**
+
+Ici vous pouvez vous lancez dans la réalisation de votre tâche et faire des sauvegardes de façon régulière sur votre branche. Voici les trois commandes qui seront vos amis fidèles durant cette phase :
+
+`git add fichier_1 fichier_2 ...`
+
+`git commit -m "Message du commit"`
+
+`git push`
+
+### **IV - Création de la PR**
+
+Une fois la fonctionnalité (ou tâche) terminée, il est temps de créer une “***pull request***” (**PR**) de son travail depuis la branche en cours vers la branche principale.
+
+***On fait une PR afin de proposer aux membres de son équipe de faire une revue de code des changements (issues de la tâche sur laquelle on a travaillé) que l’on souhaite apporter sur le projet.***
+
+**N.B**: *Tout se passe sur l’interface graphique de Github (Outils de versioning que nous utilisons)*
+
+<aside>
+💡
+
+⚠️ **Avant de de créer sa PR, il faut toujours s’assurer que les commandes suivantes ne génèrent aucune erreur en local (Nous verrons plus tard à quoi elles servent)** ⚠️
+
+`mix test`
+
+`mix credo`
+
+</aside>
+
+**Quel format doit avoir le titre de ma PR ?**
+
+Le titre de ma **PR** doit respecter le format suivant :
+
+<aside>
+💡
+
+**`DF-322** **feat**(**mise en place d'un chat collaboratif**) - Création de rooms de chat`
+
+**DF-322 : Numéro du ticket JIRA**
+
+**feat : Type de tâche réalisée (Cf. Format “**[conventional commits](https://www.notion.so/JF-TP-2-bonnes-pratiques-git-et-mise-en-place-d-une-CI-1764d1e5f33e80a7b3b6ec01c742bc61?pvs=21)**” définis avec l’équipe)**
+
+**mise en place… : Nom de la tâche effectuée**
+
+**création de … : Détails de la tâche**
+
+</aside>
+
+**Ne pas oublier d’attribuer un reviewer à la PR que vous allez créer.**
+
+### **V - Revue de code de la PR et Prise en compte des retours de la revue**
+
+Une fois une PR ouverte :
+
+- En tant que reviewer, vous pouvez faire des retours sur le code proposé
+- En tant que créateur de la PR vous devez attendre de recevoir des retours proposés par la personne en charge de la revue de code.
+
+***Les revues de code vont nous permettre de détecter en amont de la validation du code, des vulnérabilités ou erreurs de conception dans le but d’améliorer la qualité et maintenabilités du code source de notre projet.***
+
+**N.B**: *Tout se passe sur l’interface graphique de Github (Outils de versioning que nous utilisons)*
+
+### **VII - Validation de la PR**
+
+Une fois que les retours (si ils y en a) seront pris en compte, en tant que reviewer , vous pouvez valider la PR.
+
+***La valide de la PR indique que le code examiné est propre et prêt à être merger sur la branche principale.***
+
+**N.B**: *Tout se passe sur l’interface graphique Github (Outils de versioning que nous utilisons)*
+
+### **VIII - Merger le code de la PR sur la branche principale**
+
+Une fois la PR validée, vous (en tant que reviewer) êtes enfin prêt à merger le code source proposé vers la branche principale. Ce qu’il faut savoir avant de merger une PR :
+
+<aside>
+💡
+
+1. ***Toujours penser à faire “un squash and merge”*** : Il faut éviter de polluer la branche principale avec tous les commits inutiles que vous avez poussé durant votre phase d’implémentation. En faisant un “***squash and merge***”, on s’assure d’agréger tous les commits de notre travail en un seul commit dont le nom doit être identique à celui du titre de la PR
+2.  ***Vous devez merger sur la branche principale si et seulement si vous avez une pipeline verte***. **Pourquoi** ? Ceci permet d’éviter d’intégrer des régressions dans le code source de la branche principale.
+
+⚰️ **Ceux qui vont s’amuser à valider et merger des PR qui ont des pipelines rouges seront traqués, retrouvés et ….** 🙂
+
+</aside>
