@@ -80,10 +80,8 @@ jobs:
 - **Analyse de code statique** (ESLint, SonarCloud)
 - **Release automatisée** (tag + publication sur GitHub ou npm)
 
-Parfait, heureux que ça fonctionne maintenant 🙌
-Voici un **mini-cours clair et pratique** sur le **setup d'une GitHub composite action**, avec un focus sur **les erreurs classiques comme celles que tu as rencontrées**.
 
----
+
 ## `composite action` : Factoriser ses actions
 ### 🚀 Qu’est-ce qu’une composite action ?
 
