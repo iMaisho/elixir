@@ -80,6 +80,86 @@ jobs:
 - **Analyse de code statique** (ESLint, SonarCloud)
 - **Release automatisée** (tag + publication sur GitHub ou npm)
 
+Parfait, heureux que ça fonctionne maintenant 🙌
+Voici un **mini-cours clair et pratique** sur le **setup d'une GitHub composite action**, avec un focus sur **les erreurs classiques comme celles que tu as rencontrées**.
+
+---
+## `composite action` : Factoriser ses actions
+### 🚀 Qu’est-ce qu’une composite action ?
+
+Une **composite action GitHub** est un petit module réutilisable (comme une fonction) que tu peux appeler dans tes workflows (`.yml`).
+Elle permet de regrouper plusieurs étapes (`steps`) dans **un seul bloc réutilisable**, pour **éviter la duplication de code** dans tes jobs.
+
+---
+
+### ✅ Structure minimale d'une composite action
+
+📁 Arborescence typique :
+```
+.github/
+├── workflows/
+│   └── ci.yml
+└── actions/
+    └── setup_elixir/
+        └── action.yml  ✅ (nom exact requis)
+```
+
+---
+
+### 📄 Fichier `action.yml` (composite)
+
+```yaml
+name: Setup Elixir
+description: Checkout + Setup Elixir + Cache + Deps
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Elixir
+      uses: erlef/setup-beam@v1
+      with:
+        elixir-version: '1.15.2'
+        otp-version: '26.0'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: deps
+        key: ${{ runner.os }}-mix-${{ hashFiles('**/mix.lock') }}
+        restore-keys: ${{ runner.os }}-mix-
+
+    - name: Install deps
+      run: mix deps.get
+      shell: bash  # ✅ OBLIGATOIRE pour tous les `run:` dans une composite action
+```
+
+---
+
+### 💡 Points clés à **retenir**
+
+| Piège | Explication | Solution |
+|------|-------------|----------|
+| ❌ Fichier mal nommé (`setup_elixir.yml`) | `uses:` attend un **dossier**, pas un fichier `.yml` | Le fichier s’appelle toujours `action.yml` |
+| ❌ Dossier mal nommé | GitHub distingue `setup_elixir` et `setup-elixir` | Le nom du dossier doit **correspondre exactement** à celui utilisé dans `uses:` |
+| ❌ `run:` sans `shell:` | Contrairement aux workflows, ici GitHub **n'infère pas** le shell | Toujours ajouter `shell: bash` ou autre dans une composite |
+| ❌ Pas de `checkout` avant un appel local | GitHub ne peut pas lire les fichiers de ton repo sans clone | Toujours faire `- uses: actions/checkout@v4` **avant** un `uses: ./` |
+
+---
+
+### 🧪 Comment l’utiliser dans un job
+
+```yaml
+steps:
+  - uses: actions/checkout@v4  # 👈 Obligatoire AVANT l'action locale
+  - uses: ./.github/actions/setup_elixir
+  - name: Run tests
+    run: mix test
+```
+
+
 
 # Déployer une application web
 
