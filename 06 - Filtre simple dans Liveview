@@ -1,0 +1,124 @@
+# 🧑‍🏫 **Cours : Ajout d’un filtre dynamique dans une LiveView Phoenix**
+
+
+## 🧱 Objectif
+
+Ajouter un **champ de recherche interactif** (filtre) qui :
+
+* Réagit en temps réel à la saisie utilisateur,
+* Met à jour dynamiquement la liste affichée,
+* Ne nécessite **ni changement de page**, **ni rechargement complet**,
+* Ne dépend **pas d’un changeset ou d’un formulaire complexe**.
+
+
+## 🧩 Étapes complètes
+
+
+### 1. **Préparer la LiveView – `mount/3`**
+
+#### ✅ Objectif
+
+Initialiser la donnée du filtre (`""`) et préparer un `form` compatible avec `<.simple_form>` et `<.input>`.
+
+#### ✅ Actions
+
+* Appeler `to_form/2` avec une map contenant `"filter" => ""`
+* L’assigner dans `:form`
+* Charger les données avec `Chats.list_intranet_conversation_with_preload()`
+
+#### 💡 Code logique
+
+```elixir
+assign(:form, to_form(%{"filter" => ""}, as: :filter_form))
+```
+
+> Pourquoi `%{"filter" => ""}` ?
+> Parce que Phoenix sait construire un `Phoenix.HTML.Form` à partir d’une map string-keyed.
+
+
+### 2. **Créer le formulaire dans le template `.heex`**
+
+#### ✅ Objectif
+
+Afficher un champ de saisie qui déclenche un événement à chaque frappe.
+
+#### ✅ Actions
+
+* Utiliser `<.simple_form>` avec `phx-change`
+* Utiliser `<.input>` avec `field={@form[:filter]}`
+
+#### 💡 Points clés
+
+* Le `phx-change="filter"` déclenche un `handle_event("filter", ...)`
+* Le `id="..."` permet de cibler le formulaire si besoin
+
+
+### 3. **Gérer l’événement `filter` dans la LiveView**
+
+#### ✅ Objectif
+
+Mettre à jour dynamiquement la liste des conversations en fonction de la recherche.
+
+#### ✅ Actions
+
+* Lire la valeur du champ depuis les params
+* Réappeler `Chats.list_intranet_conversation_with_preload/0`
+* Filtrer côté serveur avec `Enum.filter`
+* Mettre à jour :
+
+  * `:form` pour conserver la valeur tapée
+  * le `:stream` pour réafficher la liste filtrée
+
+#### 💡 Pourquoi réassigner `:form` ?
+
+Pour que la valeur saisie reste visible après le `handle_event`.
+
+#### 💡 Pourquoi `reset: true` dans `stream` ?
+
+Pour que Phoenix **remplace toute la liste** (et non juste fusionner les ajouts/suppressions).
+
+
+### 4. **Précharger correctement les associations**
+
+#### ✅ Objectif
+
+Éviter les erreurs `Ecto.Association.NotLoaded`.
+
+#### ✅ Actions
+
+S’assurer que la fonction appelée pour charger les conversations inclut `preload(:intranet_messages)`.
+
+#### 💡 Point d’attention
+
+Si tu filtres avec une fonction qui n’inclut pas le `preload`, Phoenix va crasher dès que tu essayes de faire un `for` sur l’association.
+
+
+### 5. **Vérifications côté client (JS)**
+
+#### ✅ Objectif
+
+S’assurer que Phoenix LiveView fonctionne bien **en temps réel (WebSocket)**.
+
+#### ✅ Actions
+
+* Vérifier que le fichier `assets/js/app.js` contient bien le `LiveSocket` initialisé.
+* Vérifier que le script JS est bien inclus dans le `root.html.heex`.
+
+#### 💡 Symptôme courant
+
+Si le champ recharge la page → c’est que **le JS LiveView ne fonctionne pas** (ou mal initialisé).
+
+
+## 🧪 Résultat attendu
+
+* ✅ Un champ qui filtre les conversations au fur et à mesure.
+* ✅ Aucune relecture de page.
+* ✅ Liste mise à jour dynamiquement.
+* ✅ Code léger, clair, sans changeset inutile.
+
+
+## 🧼 Bonnes pratiques
+
+* Ne pas mélanger `@filter` et `@form[:filter]` dans les templates.
+* Toujours utiliser `to_form(...)` avec une map string-keyed ou un changeset.
+* Ajouter un `phx-submit` ou un bouton si tu veux filtrer manuellement en plus du live.
