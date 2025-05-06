@@ -1,124 +1,127 @@
-# 🧑‍🏫 **Cours : Ajout d’un filtre dynamique dans une LiveView Phoenix**
+
+# Ajout d’un filtre dynamique dans une LiveView Phoenix
+
+LiveView permet de réagir à la saisie utilisateur sans recharger la page. Nous allons ici ajouter un champ de recherche **dynamique** pour filtrer une liste en temps réel, sans utiliser de `changeset`, ni de formulaire complexe.
 
 
-## 🧱 Objectif
 
-Ajouter un **champ de recherche interactif** (filtre) qui :
+## Mise en place du filtre
 
-* Réagit en temps réel à la saisie utilisateur,
-* Met à jour dynamiquement la liste affichée,
-* Ne nécessite **ni changement de page**, **ni rechargement complet**,
-* Ne dépend **pas d’un changeset ou d’un formulaire complexe**.
-
-
-## 🧩 Étapes complètes
-
-
-### 1. **Préparer la LiveView – `mount/3`**
-
-#### ✅ Objectif
-
-Initialiser la donnée du filtre (`""`) et préparer un `form` compatible avec `<.simple_form>` et `<.input>`.
-
-#### ✅ Actions
-
-* Appeler `to_form/2` avec une map contenant `"filter" => ""`
-* L’assigner dans `:form`
-* Charger les données avec `Chats.list_intranet_conversation_with_preload()`
-
-#### 💡 Code logique
+Pour commencer, on prépare la LiveView en initialisant un formulaire très simple. On ne passe pas par un changeset, mais par une simple map contenant une clé `"filter"` vide. Cette donnée servira à construire un `Phoenix.HTML.Form` avec la fonction `to_form/2`.
 
 ```elixir
 assign(:form, to_form(%{"filter" => ""}, as: :filter_form))
 ```
 
-> Pourquoi `%{"filter" => ""}` ?
-> Parce que Phoenix sait construire un `Phoenix.HTML.Form` à partir d’une map string-keyed.
+Cela permet d’avoir un formulaire compatible avec les composants Phoenix `<.simple_form>` et `<.input>`. On en profite également pour charger la liste des éléments à afficher, ici des conversations, via notre fonction maison `Chats.list_intranet_conversation_with_preload()`.
 
 
-### 2. **Créer le formulaire dans le template `.heex`**
 
-#### ✅ Objectif
+## Création du champ de recherche
 
-Afficher un champ de saisie qui déclenche un événement à chaque frappe.
+Dans notre template `.heex`, on affiche le champ de recherche à l’intérieur d’un composant `<.simple_form>`. On utilise l’attribut `phx-change="filter"` pour déclencher une fonction à chaque modification du champ.
 
-#### ✅ Actions
+```elixir
+<.simple_form for={@form} phx-change="filter">
+  <.input field={@form[:filter]} label="Recherche" />
+</.simple_form>
+```
 
-* Utiliser `<.simple_form>` avec `phx-change`
-* Utiliser `<.input>` avec `field={@form[:filter]}`
-
-#### 💡 Points clés
-
-* Le `phx-change="filter"` déclenche un `handle_event("filter", ...)`
-* Le `id="..."` permet de cibler le formulaire si besoin
+À chaque frappe de l’utilisateur, l’événement `"filter"` sera envoyé à la LiveView, qui pourra alors mettre à jour dynamiquement le contenu affiché. Cela évite toute relecture de la page.
 
 
-### 3. **Gérer l’événement `filter` dans la LiveView**
 
-#### ✅ Objectif
+## Gérer l’événement de filtrage
 
-Mettre à jour dynamiquement la liste des conversations en fonction de la recherche.
+Dans la LiveView, on implémente une fonction `handle_event/3` pour réagir à l’événement `"filter"`. On commence par récupérer la valeur tapée, puis on recharge toutes les données (conversations), avant de les filtrer avec `Enum.filter`.
 
-#### ✅ Actions
+On met ensuite à jour deux choses :
 
-* Lire la valeur du champ depuis les params
-* Réappeler `Chats.list_intranet_conversation_with_preload/0`
-* Filtrer côté serveur avec `Enum.filter`
-* Mettre à jour :
+* le `:form`, pour conserver la saisie dans le champ ;
+* le `:stream`, pour rafraîchir la liste affichée.
 
-  * `:form` pour conserver la valeur tapée
-  * le `:stream` pour réafficher la liste filtrée
+```elixir
+{:noreply,
+ socket
+ |> assign(:form, to_form(%{"filter" => query}, as: :filter_form))
+ |> stream(:conversations, filtered_conversations, reset: true)}
+```
 
-#### 💡 Pourquoi réassigner `:form` ?
-
-Pour que la valeur saisie reste visible après le `handle_event`.
-
-#### 💡 Pourquoi `reset: true` dans `stream` ?
-
-Pour que Phoenix **remplace toute la liste** (et non juste fusionner les ajouts/suppressions).
+Le `reset: true` permet de remplacer l'intégralité de la liste au lieu de faire un patch partiel.
 
 
-### 4. **Précharger correctement les associations**
 
-#### ✅ Objectif
+## Chargement correct des données
 
-Éviter les erreurs `Ecto.Association.NotLoaded`.
-
-#### ✅ Actions
-
-S’assurer que la fonction appelée pour charger les conversations inclut `preload(:intranet_messages)`.
-
-#### 💡 Point d’attention
-
-Si tu filtres avec une fonction qui n’inclut pas le `preload`, Phoenix va crasher dès que tu essayes de faire un `for` sur l’association.
+Quand on filtre des données avec `Enum.filter`, il faut s’assurer que toutes les **associations Ecto** sont déjà préchargées. Sinon, on risque une erreur `Ecto.Association.NotLoaded`. On appelle donc une fonction qui effectue un `preload(:intranet_messages)` ou toute autre association nécessaire avant de lancer le filtrage.
 
 
-### 5. **Vérifications côté client (JS)**
 
-#### ✅ Objectif
+## Vérification côté client
 
-S’assurer que Phoenix LiveView fonctionne bien **en temps réel (WebSocket)**.
+Pour que tout fonctionne en temps réel, il faut s’assurer que le WebSocket de Phoenix LiveView est bien actif. Dans le fichier `assets/js/app.js`, on doit avoir :
 
-#### ✅ Actions
+```js
+let liveSocket = new LiveSocket("/live", Socket, {...})
+```
 
-* Vérifier que le fichier `assets/js/app.js` contient bien le `LiveSocket` initialisé.
-* Vérifier que le script JS est bien inclus dans le `root.html.heex`.
-
-#### 💡 Symptôme courant
-
-Si le champ recharge la page → c’est que **le JS LiveView ne fonctionne pas** (ou mal initialisé).
+Et dans le layout HTML (`root.html.heex`), il faut vérifier que le script JavaScript est bien inclus. Si le champ de recherche déclenche un rechargement de page, c’est probablement que le JS LiveView n’est pas initialisé correctement.
 
 
-## 🧪 Résultat attendu
+## Bonnes pratiques
 
-* ✅ Un champ qui filtre les conversations au fur et à mesure.
-* ✅ Aucune relecture de page.
-* ✅ Liste mise à jour dynamiquement.
-* ✅ Code léger, clair, sans changeset inutile.
+* Ne jamais mélanger `@filter` et `@form[:filter]` dans un même template.
+* Toujours construire le formulaire avec `to_form(...)`, même pour une map simple.
+* Pour une recherche déclenchée manuellement, on peut ajouter un bouton avec `phx-submit`.
 
 
-## 🧼 Bonnes pratiques
 
-* Ne pas mélanger `@filter` et `@form[:filter]` dans les templates.
-* Toujours utiliser `to_form(...)` avec une map string-keyed ou un changeset.
-* Ajouter un `phx-submit` ou un bouton si tu veux filtrer manuellement en plus du live.
+# Gérer le filtre côté serveur avec Ecto
+
+Plutôt que de charger toutes les conversations en mémoire pour ensuite les filtrer avec `Enum.filter`, il est bien plus efficace de **filtrer directement en base de données**, grâce à Ecto. Cela réduit la charge serveur et accélère les réponses, surtout quand les données sont nombreuses.
+
+Pour cela, on définit une fonction dédiée dans le module de contexte `Chats.ex`, par exemple :
+
+```elixir
+  def list_intranet_conversations_filtered(filter) do
+    filter = String.trim(filter)
+
+    # query =
+    #   from(c in IntranetConversation,
+    #     where: ilike(c.conversation_topic, ^"%#{filter}%")
+    #   )
+
+    IntranetConversation
+    |> where([ic], ilike(ic.conversation_topic, ^"%#{filter}%"))
+    |> Repo.all()
+    |> Repo.preload(:intranet_messages)
+  end
+```
+
+Ici, `ilike/2` permet de faire une recherche **insensible à la casse**. On utilise une interpolation avec le caractère `%` pour faire une recherche partielle (*"contient"*) sur le champ `conversation_topic`. Ensuite, on précharge les messages associés avec `Repo.preload/2`.
+
+
+
+## Avantages de cette approche
+
+* ✅ Recherche plus rapide et scalable.
+* ✅ Moins de mémoire consommée côté Elixir.
+* ✅ Moins de logique métier embarquée dans la LiveView : tout est délégué au contexte.
+
+
+
+Il suffit ensuite d'appeler cette fonction dans le `handle_event("filter", ...)` de ta LiveView `index.ex`, en lui passant le contenu du champ de recherche :
+
+```elixir
+  def handle_event("validate", %{"filter_form" => %{"filter" => value}}, socket) do
+    filtered = Chats.list_intranet_conversations_filtered(value)
+    # socket.assigns.intranet_conversation_list
+    # |> Enum.filter(fn conv ->
+    #   String.contains?(String.downcase(conv.conversation_topic), String.downcase(value))
+    # end)
+
+    {:noreply,
+     socket
+     |> assign(:form, to_form(%{"filter" => value}, as: :filter_form))
+     |> stream(:intranet_conversations, filtered, reset: true)}
+  end```
